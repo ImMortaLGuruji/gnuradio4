@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "gr4": {
+      "command": "c:/Users/ImMortaLGuruji/Documents/GitHub/gnuradio4/tools/gr4-mcp/.venv/Scripts/python.exe",
+      "args": ["-m", "gr4_mcp.server"],
+      "env": {
+        "GR4_WORKSPACE_ROOT": "c:/Users/ImMortaLGuruji/Documents/GitHub/gnuradio4",
+        "GR4_PREFIX": "c:/Users/ImMortaLGuruji/Documents/GitHub/gnuradio4/install"
+      }
+    }
+  }
+}
