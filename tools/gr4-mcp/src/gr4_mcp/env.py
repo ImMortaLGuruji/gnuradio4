@@ -11,7 +11,9 @@ from typing import Any, Dict, List, Optional
 class GR4Environment:
     """Encapsulates GNU Radio 4 environment detection, paths, and active toolchains."""
 
-    def __init__(self, workspace_root: Optional[Path] = None, prefix: Optional[Path] = None) -> None:
+    def __init__(
+        self, workspace_root: Optional[Path] = None, prefix: Optional[Path] = None
+    ) -> None:
         self.workspace_root = workspace_root or self._find_workspace_root()
         self.prefix = prefix or self._find_install_prefix()
 
@@ -25,7 +27,9 @@ class GR4Environment:
         # 2. Check parents from current file
         current = Path(__file__).resolve()
         for parent in current.parents:
-            if (parent / "modules.cmake").exists() and (parent / "CMakeLists.txt").exists():
+            if (parent / "modules.cmake").exists() and (
+                parent / "CMakeLists.txt"
+            ).exists():
                 return parent
 
         # 3. Fallback to current working directory
@@ -43,7 +47,9 @@ class GR4Environment:
         if env_prefix:
             for p in env_prefix.split(os.pathsep):
                 candidate = Path(p).resolve()
-                if (candidate / "include" / "gnuradio-4.0").exists() or (candidate / "bin" / "gr4cp_server").exists():
+                if (candidate / "include" / "gnuradio-4.0").exists() or (
+                    candidate / "bin" / "gr4cp_server"
+                ).exists():
                     return candidate
 
         # 2. Check known build prefixes in the workspace
@@ -131,11 +137,15 @@ class GR4Environment:
         # PATH
         bin_dir = str(self.prefix / "bin")
         current_path = env.get("PATH", "")
-        env["PATH"] = f"{bin_dir}{os.pathsep}{current_path}" if current_path else bin_dir
+        env["PATH"] = (
+            f"{bin_dir}{os.pathsep}{current_path}" if current_path else bin_dir
+        )
 
         # CMAKE_PREFIX_PATH
         current_cmake = env.get("CMAKE_PREFIX_PATH", "")
-        env["CMAKE_PREFIX_PATH"] = f"{prefix_str}{os.pathsep}{current_cmake}" if current_cmake else prefix_str
+        env["CMAKE_PREFIX_PATH"] = (
+            f"{prefix_str}{os.pathsep}{current_cmake}" if current_cmake else prefix_str
+        )
 
         # Lib dirs
         lib_dir = self.prefix / "lib"
@@ -147,7 +157,9 @@ class GR4Environment:
             # PKG_CONFIG_PATH
             pkg_config = f"{lib_str}/pkgconfig{os.pathsep}{prefix_str}/share/pkgconfig"
             current_pkg = env.get("PKG_CONFIG_PATH", "")
-            env["PKG_CONFIG_PATH"] = f"{pkg_config}{os.pathsep}{current_pkg}" if current_pkg else pkg_config
+            env["PKG_CONFIG_PATH"] = (
+                f"{pkg_config}{os.pathsep}{current_pkg}" if current_pkg else pkg_config
+            )
 
             # LD_LIBRARY_PATH (Linux) / DYLD_LIBRARY_PATH (macOS)
             for var in ["LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"]:
@@ -157,6 +169,10 @@ class GR4Environment:
             # GNURADIO4_PLUGIN_DIRECTORIES
             plugins_path = f"{lib_str}/gnuradio-4/plugins{os.pathsep}{lib_str}"
             cur_plugins = env.get("GNURADIO4_PLUGIN_DIRECTORIES", "")
-            env["GNURADIO4_PLUGIN_DIRECTORIES"] = f"{plugins_path}{os.pathsep}{cur_plugins}" if cur_plugins else plugins_path
+            env["GNURADIO4_PLUGIN_DIRECTORIES"] = (
+                f"{plugins_path}{os.pathsep}{cur_plugins}"
+                if cur_plugins
+                else plugins_path
+            )
 
         return env

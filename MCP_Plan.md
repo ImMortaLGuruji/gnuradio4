@@ -240,8 +240,8 @@ In `.vscode/mcp.json` or settings:
 
 ## 6. Milestones & Success Criteria
 
-- [ ] **M1 (Core Protocol & Env Discovery)**: Server runs via `stdio`, auto-detects `GR4_PREFIX`, and answers ping.
-- [ ] **M2 (Catalog & Introspection)**: Server returns all installed blocks and port schemas via `gr4://blocks`.
-- [ ] **M3 (Scaffolding Engine)**: AI can scaffold a full C++23 block and unit test that matches the [tests/oot-smoke](file:///c:/Users/ImMortaLGuruji/Documents/GitHub/gnuradio4/tests/oot-smoke) standard.
-- [ ] **M4 (TDD Build Loop)**: AI can invoke `gr4_build_oot` and `gr4_test_oot`, detect compiler issues, and self-correct.
+- [x] **M1 (Core Protocol & Env Discovery)**: Server runs via `stdio`, auto-detects `GR4_PREFIX`, and answers ping.
+- [x] **M2 (Catalog & Introspection)**: Server returns all installed blocks and port schemas via `gr4://blocks`.
+- [x] **M3 (Scaffolding Engine)**: AI can scaffold a full C++23 block and unit test that matches the [tests/oot-smoke](file:///c:/Users/ImMortaLGuruji/Documents/GitHub/gnuradio4/tests/oot-smoke) standard.
+- [x] **M4 (TDD Build Loop)**: AI can invoke `gr4_build_oot` and `gr4_test_oot`, detect compiler issues, and self-correct.
 - [ ] **M5 (Simulation & Control)**: AI can launch and test a flowgraph against `gr4cp_server` and inspect results.

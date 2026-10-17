@@ -77,7 +77,10 @@ class GR4ControlPlaneClient:
             if b.get("id") == block_id or b.get("name") == block_id:
                 return {"found": True, "block": b}
 
-        return {"found": False, "error": f"Block '{block_id}' not found in runtime catalog"}
+        return {
+            "found": False,
+            "error": f"Block '{block_id}' not found in runtime catalog",
+        }
 
     async def validate_flowgraph(self, flowgraph: Dict[str, Any]) -> Dict[str, Any]:
         """Submit a flowgraph to gr4cp_server for validation."""

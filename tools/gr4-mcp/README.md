@@ -5,6 +5,7 @@ Model Context Protocol (MCP) server providing AI-assisted development tools and 
 ## Overview
 
 `gr4-mcp` allows AI coding assistants (such as Antigravity IDE, VS Code, Cursor, and Claude Desktop) to:
+
 - Inspect active GNU Radio 4 installation prefixes, C++23 standards, and CMake build presets.
 - Connect to the GNU Radio 4 control plane daemon (`gr4cp_server`) via HTTP to discover installed blocks and validate flowgraphs.
 - Scaffold C++23 signal processing blocks conforming to the `gr::BlockLike` concept and modern template design.
@@ -13,12 +14,14 @@ Model Context Protocol (MCP) server providing AI-assisted development tools and 
 ## Running the Server
 
 Using the virtual environment:
+
 ```sh
 cd tools/gr4-mcp
 .\.venv\Scripts\python -m gr4_mcp.server
 ```
 
 Or via entrypoint:
+
 ```sh
 .\.venv\Scripts\gr4-mcp
 ```
