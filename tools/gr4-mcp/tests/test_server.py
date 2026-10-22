@@ -13,12 +13,17 @@ from gr4_mcp.server import (
     gr4_build_oot,
     gr4_test_oot,
     gr4_diagnose_compiler_error,
+    gr4_validate_flowgraph,
+    gr4_deploy_flowgraph,
+    gr4_inspect_flowgraph_state,
     get_block_concept_resource,
     get_catalog_blocks_resource,
     get_oot_template_resource,
     get_block_resource,
+    get_sample_flowgraph_resource,
     scaffold_dsp_block,
     port_gr3_to_gr4,
+    troubleshoot_dsp_pipeline,
 )
 
 
@@ -129,3 +134,50 @@ def test_prompts():
     prompt_port = port_gr3_to_gr4("// Legacy GR3 code")
     assert "gr::sync_block" in prompt_port
     assert "processBulk" in prompt_port
+
+    prompt_trouble = troubleshoot_dsp_pipeline(
+        "Buffer overflow at high sample rate", "Log: drop 500 samples"
+    )
+    assert "Buffer overflow" in prompt_trouble
+    assert "drop 500 samples" in prompt_trouble
+
+
+@pytest.mark.asyncio
+async def test_phase5_flowgraph_tools():
+    # 1. Validation tool
+    valid_fg = {
+        "blocks": [
+            {"id": "src", "type": "gr::blocks::sources::NullSource"},
+            {"id": "snk", "type": "gr::blocks::sinks::NullSink"},
+        ],
+        "connections": [
+            {
+                "source": "src",
+                "source_port": "out",
+                "target": "snk",
+                "target_port": "in",
+            },
+        ],
+    }
+    raw_val = await gr4_validate_flowgraph(json.dumps(valid_fg))
+    data_val = json.loads(raw_val)
+    assert data_val["valid"] is True
+    assert data_val["block_count"] == 2
+
+    # 2. Deploy / simulate tool
+    raw_deploy = await gr4_deploy_flowgraph(
+        json.dumps(valid_fg), run_duration_seconds=2.0
+    )
+    data_deploy = json.loads(raw_deploy)
+    assert data_deploy["success"] is True
+
+    # 3. Inspect state tool
+    raw_inspect = await gr4_inspect_flowgraph_state()
+    data_inspect = json.loads(raw_inspect)
+    assert "online" in data_inspect or "success" in data_inspect
+
+    # 4. Sample flowgraph resource
+    sample_raw = get_sample_flowgraph_resource()
+    sample_data = json.loads(sample_raw)
+    assert "blocks" in sample_data
+    assert "connections" in sample_data

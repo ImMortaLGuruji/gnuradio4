@@ -14,6 +14,7 @@ from gr4_mcp.builder import GR4Builder
 from gr4_mcp.client import GR4ControlPlaneClient
 from gr4_mcp.diagnostics import CompilerDiagnostics
 from gr4_mcp.env import GR4Environment
+from gr4_mcp.flowgraph import FlowgraphSimulator, FlowgraphValidator
 
 server = MCPServer(
     name="gr4-mcp",
@@ -24,6 +25,7 @@ server = MCPServer(
 env = GR4Environment()
 client = GR4ControlPlaneClient()
 builder = GR4Builder(env=env)
+simulator = FlowgraphSimulator(client=client)
 
 CPP23_BLOCK_CONCEPT_DOCS = """
 # GNU Radio 4 C++23 Block Architecture
@@ -402,6 +404,69 @@ def gr4_diagnose_compiler_error(error_log: str) -> str:
 
 
 # -----------------------------------------------------------------------------
+# Phase 5 Tools: Flowgraph Validation & Control-Plane Simulation
+# -----------------------------------------------------------------------------
+
+
+@server.tool()
+async def gr4_validate_flowgraph(flowgraph_json: str) -> str:
+    """Validate flowgraph topology, connections, port compatibility, and cycle constraints."""
+    try:
+        flowgraph = json.loads(flowgraph_json)
+    except Exception as err:
+        return json.dumps(
+            {"valid": False, "errors": [f"Malformed JSON: {err}"]}, indent=2
+        )
+
+    live_catalog = await client.list_blocks()
+    known_blocks = (
+        live_catalog.get("blocks", [])
+        if live_catalog.get("success")
+        else BUILTIN_BLOCKS_CATALOG
+    )
+    result = FlowgraphValidator.validate(flowgraph, known_blocks=known_blocks)
+    return json.dumps(result, indent=2)
+
+
+@server.tool()
+async def gr4_deploy_flowgraph(
+    flowgraph_json: str, run_duration_seconds: float = 5.0
+) -> str:
+    """Deploy and simulate a flowgraph on gr4cp_server or run dry-run simulation with telemetry if offline."""
+    try:
+        flowgraph = json.loads(flowgraph_json)
+    except Exception as err:
+        return json.dumps(
+            {
+                "success": False,
+                "stage": "input_parsing",
+                "error": f"Malformed JSON: {err}",
+            },
+            indent=2,
+        )
+
+    live_catalog = await client.list_blocks()
+    known_blocks = (
+        live_catalog.get("blocks", [])
+        if live_catalog.get("success")
+        else BUILTIN_BLOCKS_CATALOG
+    )
+    result = await simulator.deploy_and_simulate(
+        flowgraph=flowgraph,
+        duration_seconds=run_duration_seconds,
+        known_blocks=known_blocks,
+    )
+    return json.dumps(result, indent=2)
+
+
+@server.tool()
+async def gr4_inspect_flowgraph_state() -> str:
+    """Inspect real-time telemetry, buffer states, and sample throughput of running flowgraphs."""
+    result = await simulator.inspect_state()
+    return json.dumps(result, indent=2)
+
+
+# -----------------------------------------------------------------------------
 # MCP Resources
 # -----------------------------------------------------------------------------
 
@@ -442,6 +507,39 @@ async def get_block_resource(block_id: str) -> str:
     return json.dumps({"error": f"Block '{block_id}' not found in catalog."}, indent=2)
 
 
+@server.resource("gr4://flowgraph/sample")
+def get_sample_flowgraph_resource() -> str:
+    """Resource returning a canonical, valid GNU Radio 4 flowgraph schema."""
+    sample = {
+        "id": "sample_rotator_pipeline",
+        "description": "Source -> Complex Rotator -> Sink pipeline",
+        "blocks": [
+            {"id": "src", "type": "gr::blocks::sources::NullSource", "parameters": {}},
+            {
+                "id": "rot",
+                "type": "gr::blocks::math::Rotator",
+                "parameters": {"phase_increment": 0.05},
+            },
+            {"id": "snk", "type": "gr::blocks::sinks::NullSink", "parameters": {}},
+        ],
+        "connections": [
+            {
+                "source": "src",
+                "source_port": "out",
+                "target": "rot",
+                "target_port": "in",
+            },
+            {
+                "source": "rot",
+                "source_port": "out",
+                "target": "snk",
+                "target_port": "in",
+            },
+        ],
+    }
+    return json.dumps(sample, indent=2)
+
+
 # -----------------------------------------------------------------------------
 # MCP Prompts
 # -----------------------------------------------------------------------------
@@ -478,6 +576,28 @@ Key Migration Rules for GNU Radio 4:
 4. Replace `general_work` or `work(noutput_items, input_items, output_items)` with `gr::work::Status processBulk(const gr::ConsumableSpan<TIn>& in_span, gr::PublishableSpan<TOut>& out_span)`.
 5. Remove `gr::make` shared pointer factories; GR4 supports value-type instantiations.
 6. Add `static_assert(gr::BlockLike<...>);` at the end of the namespace.
+"""
+
+
+@server.prompt()
+def troubleshoot_dsp_pipeline(
+    issue_description: str, telemetry_or_logs: Optional[str] = None
+) -> str:
+    """Prompt template guiding the AI to troubleshoot a GNU Radio 4 DSP pipeline or runtime issues."""
+    return f"""You are troubleshooting a GNU Radio 4 signal processing flowgraph.
+
+Issue Description:
+{issue_description}
+
+Telemetry / Logs:
+{telemetry_or_logs or "No logs provided."}
+
+Troubleshooting Steps:
+1. Check sample rate matching across blocks (e.g. source vs sink rate mismatch causing buffer overflows/underruns).
+2. Validate backpressure and buffer health across `processBulk` handoffs.
+3. Verify port data types and vector alignments (e.g., float vs std::complex<float>).
+4. Check if the control plane (`gr4cp_server`) reported any disconnects or scheduling deadlocks.
+5. Provide actionable remediation steps and code/flowgraph fixes.
 """
 
 

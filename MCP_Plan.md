@@ -187,6 +187,66 @@ To guarantee **zero merge conflicts**, the MCP implementation uses a four-pillar
 
 ---
 
+### Phase 6: Next-Gen "Game Changer" Capabilities (Advanced Roadmap)
+
+**Goal**: Transform the MCP server from a code/build assistant into an end-to-end DSP, hardware, and visual design platform.
+
+#### 1. Mathematical & DSP "Golden Model" Verification
+* **Tool**: `gr4_verify_dsp_numerics(block_name: str, test_signal_type: "chirp"|"qpsk"|"two_tone", snr_db?: float)`
+* **Architecture**:
+  * Uses Python (`NumPy`, `SciPy`) to synthesize standardized numerical test vectors (IQ samples, frequency sweeps, noise).
+  * Streams vectors through the compiled C++23 block binary or standalone test runner.
+  * Computes Error Vector Magnitude (EVM), Bit Error Rate (BER), Spurious-Free Dynamic Range (SFDR), phase jitter, and frequency response against a SciPy golden model.
+  * Returns exact numeric error metrics in dB to guide autonomous mathematical optimization.
+
+#### 2. Multimodal Spectrum & Constellation Plots Directly in Chat
+* **Tool / Resource**: `gr4_plot_spectrum_constellation(flowgraph_json: dict, tap_block_id: str, fft_size?: int)`
+* **Architecture**:
+  * Taps intermediate buffer probes or sink blocks during flowgraph execution.
+  * Generates high-resolution PNG/SVG plots of FFT Power Spectral Density (PSD), spectrogram waterfalls, and IQ scatter constellation diagrams.
+  * Delivers images to the AI client via standard MCP Image resources and markdown artifacts.
+  * Enables vision-capable LLMs to visually evaluate signal quality, modulation artifacts, and filter rolloff.
+
+#### 3. Bidirectional Flowgraph Sync with GNU Radio 4 Studio
+* **Tool**: `gr4_sync_studio_canvas(flowgraph_json: dict, studio_ws_url?: str)`
+* **Architecture**:
+  * Connects directly via WebSocket to the live Studio frontend / control plane (`gr4cp_server`).
+  * Enables seamless two-way synchronization: when an AI generates or modifies a flowgraph via chat, the visual canvas in Studio updates dynamically in real time without refreshing.
+  * Exports visual Studio layouts into structured, reproducible C++23 source code or YAML/JSON definitions.
+
+#### 4. Real-Time "Self-Healing" & Pipeline Bottleneck Diagnostics
+* **Tool**: `gr4_diagnose_pipeline_health()`
+* **Architecture**:
+  * Subscribes to live scheduler telemetry: per-block CPU cycles, buffer fullness percentages, thread core affinities, and dropped sample counters (`O`/`U`).
+  * Pinpoints exact bottleneck blocks (e.g. CPU starvation in an over-dimensioned FIR filter or thread contention).
+  * Automatically applies real-time parameter tuning (decimation factors, buffer sizes, thread priorities) via `gr4cp_server` WebSocket commands.
+
+#### 5. Automated C++23 SIMD Vectorization & Microbenchmarking
+* **Tool**: `gr4_benchmark_dsp_block(block_name: str, target_simd?: "AVX2"|"AVX512"|"NEON")`
+* **Architecture**:
+  * Instruments C++23 blocks with Google Benchmark or high-resolution CPU performance counters.
+  * Measures execution throughput in **MSamples/sec** and CPU cycles/sample.
+  * Proposes and tests SIMD vectorization implementations using `std::experimental::simd`, OpenMP SIMD pragmas, or compiler vectorization hints.
+  * Generates a comparative performance report detailing speedups and memory alignment.
+
+#### 6. Automated GR3 to GR4 Ecosystem Migration Suite
+* **Tool**: `gr4_migrate_gr3_oot(source_oot_path: str, target_out_path?: str)`
+* **Architecture**:
+  * Recursively ingests legacy GNU Radio 3.x Out-Of-Tree (OOT) repositories (C++ `gr::sync_block`, `gr::block`, Python blocks, and GRC `.yml`/`.xml` bindings).
+  * AST parser extracts underlying DSP loops and state variables.
+  * Transpiles them into modern C++23 value-types satisfying `gr::BlockLike`, mapping ports to `gr::PortIn<T>` and work loops to `processBulk`.
+  * Generates clean CTest testbenches and modern CMake files ready for `projects.local.cmake`.
+
+#### 7. Connected SDR Hardware Auto-Discovery & Zero-Config Setup
+* **Tool**: `gr4_discover_sdr_hardware()`
+* **Architecture**:
+  * Queries connected software-defined radio hardware (UHD/USRP, HackRF, RTL-SDR, LimeSDR, ADALM-Pluto) via SoapySDR / UHD bindings.
+  * Returns exact hardware capabilities: tunable RF ranges, maximum sample rates, gain stages, and antenna channels.
+  * Allows the AI to generate zero-config hardware source/sink blocks that work immediately without guesswork or device string errors.
+
+---
+
+
 ## 4. IDE Integration & Configuration Guide
 
 ### 4.1 Antigravity IDE Integration
@@ -240,8 +300,20 @@ In `.vscode/mcp.json` or settings:
 
 ## 6. Milestones & Success Criteria
 
+### Core Capabilities (Phases 1 - 5) - Completed
 - [x] **M1 (Core Protocol & Env Discovery)**: Server runs via `stdio`, auto-detects `GR4_PREFIX`, and answers ping.
 - [x] **M2 (Catalog & Introspection)**: Server returns all installed blocks and port schemas via `gr4://blocks`.
 - [x] **M3 (Scaffolding Engine)**: AI can scaffold a full C++23 block and unit test that matches the [tests/oot-smoke](file:///c:/Users/ImMortaLGuruji/Documents/GitHub/gnuradio4/tests/oot-smoke) standard.
 - [x] **M4 (TDD Build Loop)**: AI can invoke `gr4_build_oot` and `gr4_test_oot`, detect compiler issues, and self-correct.
-- [ ] **M5 (Simulation & Control)**: AI can launch and test a flowgraph against `gr4cp_server` and inspect results.
+- [x] **M5 (Simulation & Control)**: AI can launch and test a flowgraph against `gr4cp_server` and inspect results.
+
+### Advanced "Game Changer" Roadmap (Phase 6)
+- [ ] **M6 (DSP Numerical Verification)**: Verify C++23 blocks with synthetic IQ vectors against SciPy golden models.
+- [ ] **M7 (Multimodal RF Plotting)**: Render and stream FFT spectra and constellation diagrams into chat as MCP image artifacts.
+- [ ] **M8 (Studio Live Sync)**: Bidirectional WebSocket synchronization between AI chat flowgraph authoring and GNU Radio 4 Studio canvas.
+- [ ] **M9 (Real-time Pipeline Self-Healing)**: Detect sample drops/bottlenecks in real time and automatically reconfigure flowgraph parameters.
+- [ ] **M10 (SIMD Benchmarking)**: Measure MSamples/sec throughput and auto-vectorize C++23 DSP code for AVX2/AVX-512/NEON.
+- [ ] **M11 (GR3 to GR4 Transpiler)**: Automated conversion toolchain for legacy GNU Radio 3.x OOT blocks to modern C++23.
+- [ ] **M12 (Hardware Auto-Discovery)**: Discover connected SDR devices (USRP, HackRF, RTL-SDR) and automatically parameterize RF chains.
+
+

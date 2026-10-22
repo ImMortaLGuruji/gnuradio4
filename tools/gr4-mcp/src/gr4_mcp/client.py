@@ -89,6 +89,62 @@ class GR4ControlPlaneClient:
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.post(url, json=flowgraph)
-                return {"status_code": resp.status_code, "response": resp.json()}
+                return {
+                    "success": resp.status_code == 200,
+                    "status_code": resp.status_code,
+                    "response": resp.json(),
+                }
+        except Exception as err:
+            return {"success": False, "error": str(err)}
+
+    async def deploy_flowgraph(
+        self, flowgraph: Dict[str, Any], duration_seconds: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """Deploy and start a flowgraph on gr4cp_server."""
+        base_url = self.resolve_base_url()
+        url = f"{base_url}/flowgraph"
+        payload = {"flowgraph": flowgraph}
+        if duration_seconds is not None:
+            payload["duration_seconds"] = duration_seconds
+
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(url, json=payload)
+                return {
+                    "success": resp.status_code in (200, 201),
+                    "status_code": resp.status_code,
+                    "response": resp.json() if resp.content else {},
+                }
+        except Exception as err:
+            return {"success": False, "error": str(err)}
+
+    async def inspect_flowgraph_state(self) -> Dict[str, Any]:
+        """Inspect the runtime state, telemetry, and block execution statistics from gr4cp_server."""
+        base_url = self.resolve_base_url()
+        url = f"{base_url}/flowgraph/status"
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    return {"success": True, "state": resp.json()}
+                return {
+                    "success": False,
+                    "status_code": resp.status_code,
+                    "error": resp.text,
+                }
+        except Exception as err:
+            return {"success": False, "error": str(err)}
+
+    async def stop_flowgraph(self) -> Dict[str, Any]:
+        """Stop running flowgraph on gr4cp_server."""
+        base_url = self.resolve_base_url()
+        url = f"{base_url}/flowgraph/stop"
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(url)
+                return {
+                    "success": resp.status_code == 200,
+                    "status_code": resp.status_code,
+                }
         except Exception as err:
             return {"success": False, "error": str(err)}
