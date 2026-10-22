@@ -69,17 +69,25 @@ Using the virtual environment:
 
 ```sh
 cd tools/gr4-mcp
-.\.venv\Scripts\python -m gr4_mcp.server
+python -m venv .venv
+
+# On Linux/macOS:
+source .venv/bin/activate
+# On Windows:
+# .venv\Scripts\activate
+
+pip install -e .
+python -m gr4_mcp.server
 ```
 
 Or via console entrypoint:
 
 ```sh
-.\tools\gr4-mcp\.venv\Scripts\gr4-mcp
+gr4-mcp
 ```
 
 ## Running Tests
 
 ```sh
-.\tools\gr4-mcp\.venv\Scripts\pytest tools/gr4-mcp/tests -v
+pytest tests/ -v
 ```

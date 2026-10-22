@@ -6,8 +6,8 @@ cffi==2.1.1
 click==8.5.0
 colorama==0.4.6
 cryptography==50.0.2
-# Editable install with no version control (gr4-mcp==0.1.0)
--e c:\users\immortalguruji\documents\github\gnuradio4\tools\gr4-mcp
+# Editable install
+-e .
 h11==0.16.0
 httpcore==1.0.9
 httpcore2==2.13.1
